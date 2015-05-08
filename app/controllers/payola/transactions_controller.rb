@@ -18,6 +18,10 @@ module Payola
       create_object(Sale, CreateSale, ProcessSale, :product, @product)
     end
 
+    def capture
+      capture_object(Sale, CaptureSale)
+    end
+
     private
     def find_product_and_coupon
       find_product

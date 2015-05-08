@@ -22,6 +22,8 @@ module Payola
     aasm column: 'state', skip_validation_on_save: true do
       state :pending, initial: true
       state :processing
+      state :authorizing
+      state :authorized
       state :finished
       state :errored
       state :refunded
@@ -30,12 +32,20 @@ module Payola
         transitions from: :pending, to: :processing
       end
 
+      event :capture, after: :capture_payment do
+        transitions from: :authorized, to: :authorizing
+      end
+
+      event :authorize, after: :instrument_authorize do
+        transitions from: :processing, to: :authorized
+      end
+
       event :finish, after: :instrument_finish do
-        transitions from: :processing, to: :finished
+        transitions from: [:processing, :authorizing], to: :finished
       end
 
       event :fail, after: :instrument_fail do
-        transitions from: [:pending, :processing], to: :errored
+        transitions from: [:pending, :processing, :authorizing], to: :errored
       end
 
       event :refund, after: :instrument_refund do
@@ -80,6 +90,15 @@ module Payola
 
     def charge_card
       Payola::ChargeCard.call(self)
+    end
+
+    def capture_payment
+      Payola::ChargeCard.call(self)
+    end
+
+    def instrument_authorize
+      Payola.instrument(instrument_key('authorized'), self)
+      Payola.instrument(instrument_key('authorized', false), self)
     end
 
     def instrument_finish

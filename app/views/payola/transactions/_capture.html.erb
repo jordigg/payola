@@ -1,0 +1,46 @@
+<%
+  button_class = local_assigns.fetch :button_class, "stripe-button-el"
+  button_inner_style = local_assigns.fetch :button_inner_style, ''
+  button_text = local_assigns.fetch :button_text, "Capture Payment"
+  product_class = sellable.product_class
+  product_permalink = sellable.permalink
+  sale_guid = sale.guid
+
+  button_id = "payola-button-#{product_class}-#{product_permalink}"
+
+  form_id = "#{button_id}-form"
+
+  error_div_id = local_assigns.fetch :error_div_id, ''
+  if error_div_id.present?
+    show_default_error_div = false
+  else
+    error_div_id = "#{button_id}-errors"
+    show_default_error_div = true
+  end
+
+    raw_data = {
+    base_path: main_app.payola_path,
+    form_id: form_id,
+    button_id: button_id,
+    error_div_id: error_div_id,
+    product_class: product_class,
+    product_permalink: product_permalink,
+    sale_guid: sale_guid
+  }
+
+  html_hash = {}
+  raw_data.each do |k,v|
+    html_hash["data-#{k}"] = v
+  end
+  html_hash["id"] = form_id
+
+%>
+<%= form_tag payola.capture_path(sale.guid), html_hash do %>
+  <button class="<%= button_class %> payola-capture-button" id="<%= button_id %>">
+    <span class="payola-capture-button-text" style="display: block; <%= button_inner_style %>"><%= button_text %></span>
+    <span class="payola-capture-button-spinner" style="display: none; <%= button_inner_style %>">Please wait...</span>
+  </button>
+  <% if show_default_error_div %>
+    <div class="payola-error-target" style="display:none", id="<%= error_div_id %>"></div>
+  <% end %>
+<% end %>

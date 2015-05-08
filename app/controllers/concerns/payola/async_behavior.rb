@@ -39,5 +39,16 @@ module Payola
 
       render_payola_status(object)
     end
+
+    def capture_object(object_class, object_capturer_class)
+      object = object_class.find_by(guid: params[:guid])
+      object.amount = object.product.price
+
+      if object.save && object_capturer_class.present?
+        Payola.queue!(object_capturer_class, object.guid)
+      end
+      
+      render_payola_status(object)
+    end
   end
 end
